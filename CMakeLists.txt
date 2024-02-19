@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 
-option(PRODUCTION_BUILD "Make this a production build" ON)
+option(PRODUCTION_BUILD "Make this a production build" OFF)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDebug")
