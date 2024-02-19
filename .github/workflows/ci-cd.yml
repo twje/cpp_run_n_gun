@@ -54,4 +54,4 @@ jobs:
       env:
         BUTLER_API_KEY: ${{ secrets.ITCH_IO_API_KEY }}
       run: |
-        butler push dist/ vampiricdev/2d-shooter:windows"
+        butler push dist/ vampiricdev/2d-shooter:windows
