@@ -1,0 +1,22 @@
+{ "columns":13,
+ "editorsettings":
+    {
+     "export":
+        {
+         "format":"json",
+         "target":"..\/..\/..\/cpp_western\/resources\/data\/tiles_out.json"
+        }
+    },
+ "image":"..\/graphics\/tilesets\/tiles_out.png",
+ "imageheight":1600,
+ "imagewidth":832,
+ "margin":0,
+ "name":"tiles_out",
+ "spacing":0,
+ "tilecount":325,
+ "tiledversion":"1.10.2",
+ "tileheight":64,
+ "tilewidth":64,
+ "type":"tileset",
+ "version":"1.10"
+}

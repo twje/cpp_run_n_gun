@@ -42,11 +42,16 @@ private:
 class Animation
 {
 public:
+    Animation(uint32_t framesPerSecond=7)
+        : mFramesPerSecond(static_cast<float>(framesPerSecond))
+        , mFrameIndex(0)
+    { }
+
     bool Update(const sf::Time& timeslice)
     {
         bool isFinished = false;
 
-        mFrameIndex += 7.0f * timeslice.asSeconds();
+        mFrameIndex += mFramesPerSecond * timeslice.asSeconds();
         if (mFrameIndex >= mCurrentSequence->Size())
         {
             mFrameIndex = 0;
@@ -70,6 +75,11 @@ public:
         }
     }
 
+    std::string GetCurrentSequenceId() 
+    { 
+        return mCurrentSequence->GetSequenceId(); 
+    }
+
     uint32_t GetFrameIndex()
     {
         return static_cast<uint32_t>(mFrameIndex);
@@ -88,5 +98,6 @@ public:
 private:
     std::unordered_map<std::string, AnimationSequence> mSequenceMap;
     AnimationSequence* mCurrentSequence = nullptr;
-    float mFrameIndex = 0;
+    float mFrameIndex;
+    float mFramesPerSecond;
 };

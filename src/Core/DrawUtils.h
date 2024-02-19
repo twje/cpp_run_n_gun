@@ -7,7 +7,7 @@
 
 //------------------------------------------------------------------------------
 template<typename T>
-void DrawRect(sf::RenderTarget& target, const T& rect, const sf::Color& color)
+void DrawRect(sf::RenderTarget& target, const sf::Rect<T>& rect, const sf::Color& color)
 {
 	sf::RectangleShape rectangleShape;
 	rectangleShape.setSize(rect.getSize());

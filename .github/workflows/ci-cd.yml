@@ -1,0 +1,62 @@
+---
+name: Build and Deploy to Itch.io
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup MSVC
+      uses: ilammy/msvc-dev-cmd@v1
+
+    - name: Setup CMake
+      uses: lukka/get-cmake@latest   
+
+    - name: Configure CMake Release Build
+      run: cmake -B ${GITHUB_WORKSPACE}/out/build/x64-Release -S . -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DPRODUCTION_BUILD=ON
+      shell: pwsh
+
+    - name: Build Release Configuration
+      run: |
+        cmake --build /out/build/x64-Release
+      shell: cmd
+
+    - name: Organize Artifacts
+      run: |
+        mkdir -p dist
+        cp -r ${GITHUB_WORKSPACE}/out/build/x64-Release/bin/* dist/    
+
+    - name: Upload zip as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: game-build
+        path: dist
+
+    - name: Echo GITHUB_RUN_NUMBER
+      run: |
+        echo GITHUB_RUN_NUMBER: "${GITHUB_RUN_NUMBER}"
+      shell: pwsh
+
+    - name: Install Butler
+      run: |
+        $url = "https://broth.itch.ovh/butler/windows-amd64/LATEST/archive/default"
+        $output = "butler.zip"
+        Invoke-WebRequest -Uri $url -OutFile $output
+        Expand-Archive -Path $output -DestinationPath $env:GITHUB_WORKSPACE\butler
+        $env:PATH += ";${env:GITHUB_WORKSPACE}\butler"
+        echo "$env:GITHUB_WORKSPACE\butler" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+    - name: Push to itch.io
+      env:
+        BUTLER_API_KEY: ${{ secrets.ITCH_IO_API_KEY }}
+      run: |
+        butler push dist/ vampiricdev/2d-shooter:windows --userversion "${GITHUB_RUN_NUMBER}"

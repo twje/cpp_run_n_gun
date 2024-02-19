@@ -2,75 +2,80 @@
 //------------------------------------------------------------------------------
 // Core
 #include "Group.h"
+#include "GameObjectManager.h"
 
 //------------------------------------------------------------------------------
-void Group::DeferredAddGameObject(GameObject* obj)
+GroupIterator::GroupIterator(std::vector<GameObject*>::iterator it, Group* group)
+    : mCurrent(it)
+    , mGroup(group)
 {
-    auto it = mRemovalQueue.find(obj);
-    if (it != mRemovalQueue.end())
-    {
-        mRemovalQueue.erase(it);
-    }
+    ++mGroup->mIterationCounter;
+    SkipMarked();
+}
 
-    if (mAddQueue.find(obj) == mAddQueue.end())
+//------------------------------------------------------------------------------
+GroupIterator::~GroupIterator()
+{
+    if (--mGroup->mIterationCounter == 0)
     {
-        if (mSortedGameObjects.empty())
-        {
-            // Immediate addition is safe as the group is not currently undergoing iteration.
-            mSortedGameObjects.push_back(obj);
-            mGameObjects.insert(obj);
-        }
-        else
-        {
-            mAddQueue.insert(obj);
-        }
+        mGroup->ProcessQueues();
     }
 }
 
 //------------------------------------------------------------------------------
-void Group::DeferredRemoveGameObject(GameObject* obj)
+GroupIterator& GroupIterator::operator++()
 {
-    auto it = mAddQueue.find(obj);
-    if (it != mAddQueue.end())
-    {
-        mAddQueue.erase(it);
-    }
+    ++mCurrent;
+    SkipMarked();
+    return *this;
+}
 
-    if (mRemovalQueue.find(obj) == mRemovalQueue.end())
+//------------------------------------------------------------------------------
+GameObject* GroupIterator::operator*()
+{
+    return *mCurrent;
+}
+
+//------------------------------------------------------------------------------
+bool GroupIterator::operator!=(const GroupIterator& other)
+{
+    return mCurrent != other.mCurrent;
+}
+
+//------------------------------------------------------------------------------
+void GroupIterator::SkipMarked()
+{
+    while (mCurrent != mGroup->mSortedGameObjects.end() && mGroup->mRemoveQueue.find(*mCurrent) != mGroup->mRemoveQueue.end())
     {
-        mRemovalQueue.insert(obj);
+        ++mCurrent;
     }
 }
 
 //------------------------------------------------------------------------------
-bool Group::ContainsGameObject(GameObject* obj)
+void Group::AddGameObject(GameObject* obj)
 {
-    return mGameObjects.find(obj) != mGameObjects.end();
+    if (!obj->IsMarkedForRemoval() && mAddQueue.find(obj) == mAddQueue.end())
+    {
+        obj->TrackGroupMembership(this);
+
+        mAddQueue.insert(obj);
+        mRemoveQueue.erase(obj);
+        ProcessQueues();
+    }
 }
 
 //------------------------------------------------------------------------------
-void Group::SyncGameObjectChanges()
+void Group::RemoveGameObject(GameObject* obj)
 {
-    for (GameObject* obj : mRemovalQueue)
+    if (mRemoveQueue.find(obj) == mRemoveQueue.end())
     {
-        auto it = std::find(mSortedGameObjects.begin(), mSortedGameObjects.end(), obj);
-        if (it != mSortedGameObjects.end())
-        {
-            mSortedGameObjects.erase(it);
-            mGameObjects.erase(obj);  // Keep mGameObjects in sync
-        }
-    }
-    mRemovalQueue.clear();
 
-    for (GameObject* obj : mAddQueue)
-    {
-        if (mGameObjects.find(obj) == mGameObjects.end())
-        {
-            mSortedGameObjects.push_back(obj);
-            mGameObjects.insert(obj);  // Keep mGameObjects in sync
-        }
+        obj->UntrackGroupMembership(this);
+
+        mRemoveQueue.insert(obj);
+        mAddQueue.erase(obj);
+        ProcessQueues();
     }
-    mAddQueue.clear();
 }
 
 //------------------------------------------------------------------------------

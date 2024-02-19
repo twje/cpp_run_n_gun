@@ -10,24 +10,42 @@
 
 // Core
 #include "Transformable.h"
+#include "FloatRect.h"
+#include "EventQueue.h"
 
 //------------------------------------------------------------------------------
 class GameObject : public sf::Drawable, public Tranformable
 {
 public:
     virtual ~GameObject() = default;
-    virtual sf::FloatRect GetGlobalBounds() const = 0;
-    virtual sf::FloatRect GetHitbox() const { return GetGlobalBounds(); }
+
+    virtual FloatRect GetGlobalBounds() const = 0;
+    virtual uint32_t GetDepth() const { return 0; }
     virtual void Update(const sf::Time& timeslice) { };
     virtual void draw(sf::RenderTarget& target, const sf::RenderStates& states) const { }
 
-    void AddToGroup(Group* group);
-    void RemoveFromGroup(Group* group);
-    void Kill();
-    void SyncGameObjectChanges();
-    bool IsKilled() { return mIsKilled; }
+    // Collision detection
+    virtual FloatRect GetHitbox() const { return GetGlobalBounds(); }
+    virtual FloatRect GetPreviousHitbox() const { return GetHitbox(); }    
+    virtual const sf::Vector2f GetVelocity() const { return { }; };    
+    bool IsDownCollision(const GameObject& other) const;    
+    bool IsUpCollision(const GameObject& other) const;
+    bool IsLeftCollision(const GameObject& other) const;        
+    bool IsRightCollision(const GameObject& other) const;
 
-private:
-    std::unordered_set<Group*> mGroups;
-    bool mIsKilled = false;
+    // Group Membership
+    void Kill();
+    void TrackGroupMembership(Group* group);
+    void UntrackGroupMembership(Group* group);
+    bool IsMarkedForRemoval() const { return mIsMarkedForRemoval; }
+    
+    // Event Handling
+    void SetEntityId(uint32_t entityId) { mEntityId = entityId; }
+    uint32_t GetEntityId() const { return mEntityId; }
+    virtual void HandleEvent(Event* event) { };
+
+private:    
+    std::unordered_set<Group*> mTrackedGroups;
+    bool mIsMarkedForRemoval = false;
+    uint32_t mEntityId = 0;
 };

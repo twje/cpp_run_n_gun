@@ -1,0 +1,14 @@
+{ "columns":31,
+ "image":"..\/graphics\/sky\/fg_sky.png",
+ "imageheight":1088,
+ "imagewidth":1984,
+ "margin":0,
+ "name":"fg_sky",
+ "spacing":0,
+ "tilecount":527,
+ "tiledversion":"1.10.2",
+ "tileheight":64,
+ "tilewidth":64,
+ "type":"tileset",
+ "version":"1.10"
+}

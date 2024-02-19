@@ -4,6 +4,7 @@
 //------------------------------------------------------------------------------
 // Core
 #include "GameObject.h"
+#include "EventQueue.h"
 
 //------------------------------------------------------------------------------
 class GameObjectManager
@@ -20,15 +21,23 @@ public:
     T* CreateGameObject(Args&&... args)
     {
         auto gameObject = std::make_unique<T>(std::forward<Args>(args)...);
+        gameObject->SetEntityId(++mEntityIdCounter);
+        
         T* ptr = gameObject.get();
+        mGameObjectLookup[mEntityIdCounter] = ptr;                     
         mGameObjects.insert(std::move(gameObject));
+
         return ptr;
     }
 
     void SyncGameObjectChanges();
+    GameObject* GetInstance(uint32_t entityId);
+    void RemoveAllGameObjects();
 
 private:
-    GameObjectManager() = default;
+    GameObjectManager();
 
-    std::unordered_set<std::unique_ptr<GameObject>> mGameObjects;
+    std::unordered_map<uint32_t, GameObject*> mGameObjectLookup;
+    std::unordered_set<std::unique_ptr<GameObject>> mGameObjects;    
+    uint32_t mEntityIdCounter = 0;
 };

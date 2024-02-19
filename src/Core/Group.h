@@ -7,77 +7,76 @@
 #include <vector>
 #include <functional>
 #include <algorithm>
+#include <cstdint>
 
 // Forward declarations
 //------------------------------------------------------------------------------
 class GameObject;
+class Group;
+
+//------------------------------------------------------------------------------
+class GroupIterator
+{
+public:
+    explicit GroupIterator(std::vector<GameObject*>::iterator it, Group* group);
+    ~GroupIterator();
+
+    GroupIterator& operator++();
+    GameObject* operator*();
+    bool operator!=(const GroupIterator& other);
+
+private:
+    void SkipMarked();
+
+    std::vector<GameObject*>::iterator mCurrent;
+    Group* mGroup;
+};
 
 //------------------------------------------------------------------------------
 class Group
 {
+    friend GroupIterator;
+
 public:
-    void DeferredAddGameObject(GameObject* obj);
-    void DeferredRemoveGameObject(GameObject* obj);
-    bool ContainsGameObject(GameObject* obj);
-    void SyncGameObjectChanges();    
-    void Sort(const std::function<bool(GameObject*, GameObject*)>& compareFunc);
-    
-    class Iterator
+    void AddGameObject(GameObject* obj);
+    void RemoveGameObject(GameObject* obj);
+    void Sort(const std::function<bool(GameObject*, GameObject*)>& compareFunc);    
+
+    GroupIterator begin()
     {
-    public:
-        explicit Iterator(std::vector<GameObject*>::iterator it, Group* group)
-            : mCurrent(it)
-            , mGroup(group)
-        { }
-
-        Iterator& operator++()
-        {
-            ++mCurrent;
-            SkipMarked();
-            return *this;
-        }
-
-        GameObject* operator*()
-        {
-            return *mCurrent;
-        }
-
-        bool operator!=(const Iterator& other)
-        {
-            return mCurrent != other.mCurrent;
-        }
-
-    private:
-        void SkipMarked()
-        {
-            while (mCurrent != mGroup->mSortedGameObjects.end() && mGroup->IsMarkedForRemoval(*mCurrent))
-            {
-                ++mCurrent;
-            }
-        }
-
-        std::vector<GameObject*>::iterator mCurrent;
-        Group* mGroup;
-    };
-
-    Iterator begin()
-    {
-        return Iterator(mSortedGameObjects.begin(), this);
+        return GroupIterator(mSortedGameObjects.begin(), this);
     }
 
-    Iterator end()
+    GroupIterator end()
     {
-        return Iterator(mSortedGameObjects.end(), this);
+        return GroupIterator(mSortedGameObjects.end(), this);
     }
 
 private:
-    bool IsMarkedForRemoval(GameObject* obj) const
+    void ProcessQueues()
     {
-        return mRemovalQueue.find(obj) != mRemovalQueue.end();
-    }
+        if (mIterationCounter == 0)
+        {
+            for (GameObject* obj : mAddQueue)
+            {
+                mSortedGameObjects.push_back(obj);
+            }
+            mAddQueue.clear();
 
+            for (GameObject* obj : mRemoveQueue)
+            {
+                auto it = std::find(mSortedGameObjects.begin(), mSortedGameObjects.end(), obj);
+                if (it != mSortedGameObjects.end())
+                {
+                    mSortedGameObjects.erase(it);
+                }
+            }
+            mRemoveQueue.clear();
+        }
+    }
+    
     std::vector<GameObject*> mSortedGameObjects;
-    std::unordered_set<GameObject*> mGameObjects;
+    std::unordered_set<GameObject*> mRemoveQueue;
     std::unordered_set<GameObject*> mAddQueue;
-    std::unordered_set<GameObject*> mRemovalQueue;
+    uint32_t mIterationCounter{ 0 };
 };
