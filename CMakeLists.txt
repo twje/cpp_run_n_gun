@@ -8,7 +8,9 @@ else()
 	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
 endif()
 
-project(RunNGun)
+project(RunNGun VERSION 1.0)
+
+file(WRITE ${CMAKE_SOURCE_DIR}/resources/buildnumber.txt "${PROJECT_VERSION}")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
